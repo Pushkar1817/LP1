@@ -1,147 +1,147 @@
-#include<bits/stdc++.h>
+#include<iostream>
+#include<vector>
 using namespace std;
 
 class memoryManagement{
     public:
-        // vector having pair to store status and size of memory block
-        vector<pair<string,int>>mainMemory;
-        int nextLocation;
-        // constructor
-        // take input of number of blocks and sizes of each block and add in vector
+        vector<vector<pair<string,int>>>mainMemory;
+        int nextLocation ;
+        int num,size;
+
         memoryManagement(){
-            int num,size;
-            cout<<"Enter number of blocks: ";
+            cout<<"Enter number of Blocks :";
             cin>>num;
-            for(int i=0;i<num;i++){
-                cout<<"Enter size of block "<<i+1<<": ";
+
+            for(int i = 0 ;i< num ;i++){
+                cout<<"Enter size of block"<<i+1<<" : ";
                 cin>>size;
-                mainMemory.push_back(make_pair("Free",size));
+                mainMemory.push_back({{"Free",size}});
             }
             nextLocation = -1;
         }
 
-        // firstFit
-        // take input for process name and process size simply check if block is free and its size is greater than or equal to processize insert it
         void firstFit(){
             string processName;
             int processSize;
-            cout<<"Enter process name: ";
+            cout<<"Enter Process name : ";
             cin>>processName;
-            cout<<"Enter process size: ";
+            cout<<"Enter the size of Process "<<processName<<" : ";
             cin>>processSize;
             bool allocated = false;
 
-            for(size_t i=0;i<mainMemory.size();i++){
-                if(mainMemory[i].first == "Free" && mainMemory[i].second >= processSize){
-                    mainMemory[i].first = processName;
-                      allocated = true;
+            for(int i = 0 ;i< num ;i++){
+                for(int  j = 0 ;j< mainMemory[i].size() ;j++){
+                    if(mainMemory[i][j].first == "Free" && mainMemory[i][j].second >=processSize){
+                        mainMemory[i][j].first = processName;
+                        if(mainMemory[i][j].second > processSize){
+                            mainMemory[i].push_back({"Free",mainMemory[i][j].second - processSize});
+                            mainMemory[i][mainMemory[i].size()-2].second = processSize; 
+                        }
+                        allocated = true;
+                        break;
+                    }
+                }
+                if(allocated){
                     break;
                 }
             }
-            if (!allocated) {
-                cout << "Not enough memory to allocate " << processName << endl;
+            if(!allocated){
+                cout<<"Not enough memory to allocate "<<processName<<endl;
             }
+
         }
 
-        // take input for process name and size keep two variables to keep track on bestSize and bestIndex
-        // run a loop on memory vector and check if block is free and size is available then check for if its less than bestsize then simply
-        // change bestsize and bestlocation according to this block then if betslocation != -1 then add processname to that black else add 
-        // no memory block available 
-        void bestFit(){
-            string processName;
-            int processSize;
-            cout<<"Enter process name: ";
-            cin>>processName;
-            cout<<"Enter process size: ";
-            cin>>processSize;
+        // void bestFit(){
+        //     string processName;
+        //     int processSize;
+        //     cout<<"Enter Process name : ";
+        //     cin>>processName;
+        //     cout<<"Enter the size of Process "<<processName<<" : ";
+        //     cin>>processSize;
+        //     // bool allocated = false;
+        //     int lessRem = 10000000007;
+        //     int bestBlock = -1;
 
-            int bestSize = INT_MAX;
-            int bestLocation = -1;
-             bool allocated = false;
-            for(size_t i=0;i<mainMemory.size();i++){
-                if(mainMemory[i].first=="Free" && mainMemory[i].second >= processSize){
-                    if(mainMemory[i].second < bestSize){
-                        bestSize = mainMemory[i].second;
-                        bestLocation=i;
-                    }
-                }
-            }
-            if(bestLocation != -1) {
-                mainMemory[bestLocation].first = processName;
-                allocated = true;
-            }
-            if (!allocated) {
-                cout << "Memory not available for " << processName << endl;
-            }
-        }
+        //     for(int i = 0 ;i< num ;i++){
+        //         if(mainMemory[i].first == "Free" && mainMemory[i].second >= processSize){
+        //             if(bestBlock == -1 || lessRem > mainMemory[i].second ){
+        //                 bestBlock = i;
+        //                 lessRem = mainMemory[i].second;
+        //             }
+        //         }
+        //     }
 
-        // same as bestfit just there we are checking for less memory size here check for more memory size
-        void worstFit(){
-            string processName;
-            int processSize;
-            cout<<"Enter process name: ";
-            cin>>processName;
-            cout<<"Enter process size: ";
-            cin>>processSize;
-            bool allocated = false;
-            
-            int worstSize=0;
-            int worstLocation = -1;
-            for(size_t i=0;i<mainMemory.size();i++){
-                if(mainMemory[i].first=="Free" && mainMemory[i].second >= processSize){
-                    if(mainMemory[i].second > worstSize){
-                        worstSize = mainMemory[i].second;
-                        worstLocation=i;
-                    }
-                }
-            }
-            if (worstLocation != -1) {
-                mainMemory[worstLocation].first = processName;
-                allocated = true;
-            }
+        //     if(bestBlock != -1){
+        //         mainMemory[bestBlock].first = processName;
+        //     }
+        //     else{
+        //         cout<<"Not Enough memory to allocate "<<processName<<endl;
+        //     }
+        // }
+        // void worstFit(){
+        //     string processName;
+        //     int processSize;
+        //     cout<<"Enter Process name : ";
+        //     cin>>processName;
+        //     cout<<"Enter the size of Process "<<processName<<" : ";
+        //     cin>>processSize;
+        //     // bool allocated = false;
+        //     int moreRem = 10000000007;
+        //     int worstBlock = -1;
 
-            if (!allocated) {
-                cout << "Memory not available for " << processName << endl;
-            }
-        }
+        //     for(int i = 0 ;i< num ;i++){
+        //         if(mainMemory[i].first == "Free" && mainMemory[i].second >= processSize){
+        //             if(worstBlock == -1 || moreRem < mainMemory[i].second ){
+        //                 worstBlock = i;
+        //                 moreRem = mainMemory[i].second;
+        //             }
+        //         }
+        //     }
 
-        // take input for processname and processsize 
-        // // find next location
-        // if block is free and have greater size than processSize add it and update nexrlocation if memoryblock not present then not enough memory
-        void nextFit() {
-            string processName;
-            int processSize;
-            cout << "Enter process name: ";
-            cin >> processName;
-            cout << "Enter process size: ";
-            cin >> processSize;
+        //     if(worstBlock != -1){
+        //         mainMemory[worstBlock].first = processName;
+        //     }
+        //     else{
+        //         cout<<"Not Enough memory to allocate "<<processName<<endl;
+        //     }
+        // }
+        // void nextFit() {
+        //     string processName;
+        //     int processSize;
+        //     cout << "Enter process name: ";
+        //     cin >> processName;
+        //     cout << "Enter process size: ";
+        //     cin >> processSize;
 
-            int i = (nextLocation + 1) % mainMemory.size();
-            bool allocated = false;
-            while (i != nextLocation) {
-                if (mainMemory[i].first == "Free" && mainMemory[i].second >= processSize) {
-                    mainMemory[i].first = processName;
-                    nextLocation = i;
-                    allocated = true;
-                    return;
-                }
-                i = (i + 1) % mainMemory.size();
-            }
+        //     int i = (nextLocation + 1) % mainMemory.size();
+        //     bool allocated = false;
+        //     while (i != nextLocation) {
+        //         if (mainMemory[i].first == "Free" && mainMemory[i].second >= processSize) {
+        //             mainMemory[i].first = processName;
+        //             nextLocation = i;
+        //             allocated = true;
+        //             return;
+        //         }
+        //         i = (i + 1) % mainMemory.size();
+        //     }
 
-            if (!allocated) {
-                cout << "Not enough memory for " << processName << endl;
-            }
-        }
+        //     if (!allocated) {
+        //         cout << "Not enough memory for " << processName << endl;
+        //     }
+        // }
 
         void viewMemory(){
-            int i=0;
-            for(auto it:mainMemory){
-                cout<<i++<<" "<<it.first<<" "<<it.second<<endl;
+            for(int i = 0 ;i< num ;i++){
+                cout<<i+1 ;
+                for(int j = 0 ;j< mainMemory[i].size() ;j++){
+                    cout<<"\t"<<j+1<<"  "<<mainMemory[i][j].first<<"  "<<mainMemory[i][j].second<<endl;
+                }
             }
-        }  
+        } 
 };
 
-int main() {
+int main ()
+{
     memoryManagement obj;
 
     while (true) {
@@ -162,18 +162,18 @@ int main() {
                 cout << "First Fit Allocation:" << endl;
                 obj.firstFit();
                 break;
-            case 2:
-                cout << "Best Fit Allocation:" << endl;
-                obj.bestFit();
-                break;
-            case 3:
-                cout << "Worst Fit Allocation:" << endl;
-                obj.worstFit();
-                break;
-            case 4:
-                cout << "Next Fit Allocation:" << endl;
-                obj.nextFit();
-                break;
+            // case 2:
+            //     cout << "Best Fit Allocation:" << endl;
+            //     obj.bestFit();
+            //     break;
+            // case 3:
+            //     cout << "Worst Fit Allocation:" << endl;
+            //     obj.worstFit();
+            //     break;
+            // case 4:
+            //     cout << "Next Fit Allocation:" << endl;
+            //     obj.nextFit();
+            //     break;
             case 5:
                 cout << "Current Memory Status:" << endl;
                 obj.viewMemory();
