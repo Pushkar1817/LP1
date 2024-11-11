@@ -1,0 +1,150 @@
+#include<iostream>
+#include<vector>
+#include<algorithm>
+using namespace std;
+
+class candidate{
+    public:
+        int id;
+        string cname;
+        
+        candidate(){
+            id = 0 ;
+            cname = "";
+        }
+
+        friend class election;
+};
+
+class election{
+    private:
+        vector<candidate>Candidates;
+        vector<int>flag;
+        int num;
+
+        int highest(vector<candidate>Candidates){
+            int pos = 0,max = 0;
+            for(int i = 0 ;i< num ;i++){
+                if(Candidates[i].id>max){
+                    max = Candidates[i].id;
+                    pos = i;
+                }
+            }
+            return pos;
+        }
+
+        int findPosition(int id){
+            for(int i = 0 ;i< num ;i++){
+                if(Candidates[i].id == id){
+                    return i;
+                }
+            }
+            return 0;
+        }
+    public:
+
+        void insertCandidates(){
+            cout<<"Enter the number of candidates : ";
+            cin>>num;
+            Candidates.resize(num);
+            flag.resize(num);
+
+            for(int i = 0 ;i< num ;i++){
+                cout<<"Enter Candidate name : ";
+                cin>>Candidates[i].cname;
+                cout<<"Entee Candidate id : ";
+                cin>>Candidates[i].id;
+            }
+
+            int pos = highest(Candidates);
+            cout<<"Candidate named "<<Candidates[pos].cname<<" has crashed. ID: "<<Candidates[pos].id <<endl;
+        }
+
+        candidate bullyAlgorithm(candidate initializer){
+            for(int i = 0 ;i< num ;i++){
+                flag[i] = 0;
+            }
+
+            int crashed = highest(Candidates);
+            flag[crashed] = 1;
+
+            for(int i = 0 ; i< num ;i++){
+                if(Candidates[i].id > initializer.id){
+                    cout<<"Election message sent from Candidate(initializer) "<<initializer.id<<" to Candidate "<<Candidates[i].id<<endl;
+                }
+                else 
+                    flag[i] =1;
+            }
+
+            for(int i = 0 ;i< num ;i++){
+                if(flag[i] !=1 && Candidates[i].id > initializer.id){
+                    cout<<"The process "<<Candidates[i].id<<" takes over from the current initializer "<<initializer.id<<endl;
+                    flag[initializer.id] = 1;
+                    initializer = Candidates[i];
+                }
+            }
+
+            for(int i = 0 ;i< num ;i++)
+                if(!flag[i])
+                    initializer = bullyAlgorithm(initializer);
+            
+            return initializer;
+        }
+
+        void ringAlgorithm(candidate initializer){
+            vector<int>receivers;
+            int crashed = highest(Candidates);
+            int pos = findPosition(initializer.id);
+            int count = 0 ,i = pos;
+
+            while(count < num){
+                if(i != crashed){
+                    receivers.push_back(Candidates[i].id);
+                }
+                i = (i+1)%num;
+                count++;
+            }
+            cout<<"Message is [";
+            for(int i = 0 ;i< receivers.size() ;i++){
+                cout<<receivers[i]<<" ";
+            }
+            cout<<"]"<<endl;
+            int cord_id = *max_element(receivers.begin(),receivers.end());
+            int final_cord_pos = findPosition(cord_id);
+
+            cout<<"Final Co-ordinator is : "<<Candidates[final_cord_pos].cname<<endl;
+        }
+};
+
+int main ()
+{
+    election e;
+    e.insertCandidates();
+    candidate i_coord;
+    candidate f_coord;
+    //5 c1 1 c2 2 c3 3 c4 4 c5 5
+    cout<<"Enter the name of candidate which detects that the coordinator is chrashed : ";
+    cin>>i_coord.cname;
+    cout<<"Enter the id of candidate which detects that the coordinator is chrashed : ";
+    cin>>i_coord.id;
+
+    int ch = 0 ;
+    while(ch!=3){
+        cout<<"MENU"<<endl;
+        cout<<"1.Bully Algorithm\n2.Ring Algorithm \n 3.Exit \n";
+        cout<<"Enter your choice : ";
+        cin>>ch;
+        switch(ch){
+            case 1:
+                f_coord = e.bullyAlgorithm(i_coord);
+                cout<<"The Final coordinator is : "<<f_coord.cname<<endl;
+                break;
+            case 2:
+                e.ringAlgorithm(i_coord);
+            default:
+                ch = 3;
+        }
+    }
+    
+    return 0;
+}
