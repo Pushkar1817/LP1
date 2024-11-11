@@ -1,0 +1,326 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+class KPDTAB
+{
+public:
+    string key;
+    string value;
+};
+
+class MNT
+{
+public:
+    string name;
+    int pp;
+    int kp;
+    int MDTP;
+    int KPDTP;
+};
+
+class PNTAB
+{
+public:
+    int index;
+    string param;
+};
+
+vector<vector<string>> tokenizeFile()
+{
+    ifstream fin("mybigmacro.txt");
+    if (fin.fail())
+    {
+        cout << "Failed to connect to file .....\n";
+        return {};
+    }
+
+    vector<vector<string>> tokens;
+    string line;
+    while (getline(fin, line))
+    {
+        string word;
+        stringstream ss(line);
+        vector<string> temp;
+        while (ss >> word)
+        {
+            temp.push_back(word);
+        }
+        tokens.push_back(temp);
+    }
+    return tokens;
+}
+
+class Pass1Macro
+{
+
+private:
+    vector<KPDTAB> kpdtab;
+    vector<MNT> mnt;
+    vector<PNTAB> pntab;
+    vector<vector<string>> mdt;
+    vector<vector<string>> tokens;
+
+public:
+    Pass1Macro()
+    {
+        tokens = tokenizeFile();
+    }
+
+    void fillMNT()
+    {
+        for (int i = 0; i < tokens.size(); i++)
+        {
+            bool isMacro = false;
+            if (tokens[i][0] == "MACRO")
+            {
+                isMacro = true;
+            }
+            if (isMacro)
+            {
+                i++;
+                MNT mntObj;
+                mntObj.name = tokens[i][0];
+                int kp = 0;
+                int pp = 0;
+                for (int j = 1; j < tokens[i].size(); j++)
+                {
+                    if (tokens[i][j].find("=") != string::npos)
+                    {
+                        kp++;
+                    }
+                    else
+                    {
+                        pp++;
+                    }
+                }
+                mntObj.pp = pp;
+                mntObj.kp = kp;
+                mnt.push_back(mntObj);
+                isMacro = false;
+            }
+        }
+        return;
+    }
+
+    void printMNT()
+    {
+        cout << "\n\n..........................MNT..............................\n";
+
+        for (int i = 0; i < mnt.size(); i++)
+        {
+            cout << left << setw(20) << "Macro Name: " << mnt[i].name << left << setw(20) << "\tPositional Parameters: "
+                 << mnt[i].pp << left << setw(20) << "\tKeyword Parameters: " << mnt[i].kp << "\tMDTP:  " << mnt[i].MDTP << left << setw(20) << "\tKPDTP:  " << mnt[i].KPDTP << endl;
+        }
+        return;
+    }
+
+    void fillPNTAB()
+    {
+        for (int i = 0; i < tokens.size(); i++)
+        {
+            if (tokens[i][0] == "MACRO")
+            {
+                i++;
+                int count = 1;
+                for (int j = 1; j < tokens[i].size(); j++)
+                {
+                    PNTAB pn;
+                    pn.index = count++;
+                    pn.param = tokens[i][j];
+                    pntab.push_back(pn);
+                }
+            }
+        }
+        return;
+    }
+
+    void printPNTAB()
+    {
+        cout << "\n\n..........................PNTAB............................\n";
+        for (int i = 0; i < pntab.size(); i++)
+        {
+            cout << left << setw(20) << pntab[i].index << left << setw(20) << pntab[i].param << endl;
+        }
+        return;
+    }
+
+    pair<string, string> findDefault(string str)
+    {
+        string key = "";
+        string param = "";
+        bool isEql = false;
+        for (int i = 0; i < str.length(); i++)
+        {
+            if (str[i] == ',')
+            {
+                continue;
+            }
+            if (str[i] == '=')
+            {
+                isEql = true;
+                continue;
+            }
+            if (isEql)
+            {
+                param += str[i];
+            }
+            else
+            {
+                key += str[i];
+            }
+        }
+        return {key, param};
+    }
+
+    void fillKPDTAB()
+    {
+        for (int i = 0; i < tokens.size(); i++)
+        {
+            if (tokens[i][0] == "MACRO")
+            {
+                i++;
+                for (int j = 1; j < tokens[i].size(); j++)
+                {
+                    KPDTAB kpObj;
+                    if (tokens[i][j].find("=") != string::npos)
+                    {
+                        if (tokens[i][j].back() == '=')
+                        {
+                            kpObj.key = tokens[i][j];
+                            kpObj.value = -1;
+                        }
+                        else
+                        {
+                            kpObj.key = findDefault(tokens[i][j]).first;
+                            kpObj.value = findDefault(tokens[i][j]).second;
+                        }
+                        kpdtab.push_back(kpObj);
+                    }
+                }
+            }
+        }
+        return;
+    }
+
+    void printKPDTAB()
+    {
+        cout << "\n\n.........................KPDTAB.............................\n";
+        for (int i = 0; i < kpdtab.size(); i++)
+        {
+            cout << left << setw(20) << kpdtab[i].key << setw(20) << kpdtab[i].value << endl;
+        }
+    }
+
+    void fillMDT()
+    {
+        unordered_map<string, int> mp;
+        for (int i = 0; i < tokens.size(); i++)
+        {
+            vector<string> temp;
+            if (tokens[i][0] == "MACRO")
+            {
+                i++;
+                int count = 1;
+                for (int j = 1; j < tokens[i].size(); j++)
+                {
+                    string key = findDefault(tokens[i][j]).first;
+                    mp[key] = count;
+                    count++;
+                }
+            }
+            else if (tokens[i][0] == "MEND")
+            {
+                mdt.push_back({"MEND"});
+                mp.clear();
+                continue;
+            }
+            else
+            {
+                string instru = tokens[i][0];
+                temp.push_back(instru);
+                int index1 = mp[tokens[i][1]];
+                temp.push_back("(p , " + to_string(index1) + " )");
+                int index2 = mp[tokens[i][2]];
+                if (index2 == 0)
+                {
+                    temp.push_back(tokens[i][2]);
+                }
+                else
+                {
+                    temp.push_back("(p , " + to_string(index2) + " )");
+                }
+                mdt.push_back(temp);
+            }
+        }
+    }
+
+    void printMDT()
+    {
+        cout << "\n\n...........................MDT.............................\n";
+        for (int i = 0; i < mdt.size(); i++)
+        {
+            for (int j = 0; j < mdt[i].size(); j++)
+            {
+                cout << mdt[i][j] << "\t";
+            }
+            cout << endl;
+        }
+        return;
+    }
+
+    void setMDTPointers()
+    {
+        mnt[0].MDTP = 1;
+        int mntInd = 1;
+        int mdtCnt = 0;
+        for (int i = 0; i < mdt.size(); i++)
+        {
+            if (mdt[i][0] == "MEND")
+            {
+                if (mntInd < mnt.size())
+                {
+                    mnt[mntInd].MDTP = mdtCnt + 2;
+                    mntInd++;
+                }
+                else
+                {
+                    break;
+                }
+            }
+            mdtCnt++;
+        }
+    }
+
+    void setKPDTP()
+    {
+        mnt[0].KPDTP = 0;
+        for (int i = 1; i < tokens.size(); i++)
+        {
+            if (i == 1)
+            {
+                mnt[1].KPDTP = 1;
+            }
+            else
+            {
+                mnt[i].KPDTP = mnt[i - 1].kp + mnt[i - 1].KPDTP;
+            }
+        }
+        return;
+    }
+};
+
+int main()
+{
+    Pass1Macro obj;
+    obj.fillMNT();
+    obj.fillPNTAB();
+    obj.printPNTAB();
+    obj.fillKPDTAB();
+    obj.printKPDTAB();
+    obj.fillMDT();
+    obj.printMDT();
+    obj.setMDTPointers();
+    obj.setKPDTP();
+    obj.printMNT();
+    return 0;
+}
