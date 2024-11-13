@@ -171,16 +171,49 @@ class memoryManagement{
 
 int main ()
 {
-    memoryManagement m ;
-    //5 10 20 30 25 50 pro1 25
-    m.displayMemory();
-    m.firstFit();
-    m.displayMemory();
-    m.nextFit();
-    m.displayMemory();
-    m.bestFit();
-    m.displayMemory();
-    m.worstFit();
-    m.displayMemory();
+    memoryManagement obj;
+
+    while (true) {
+        cout << "\nSelect allocation method:" << endl;
+        cout << "1. First Fit" << endl;
+        cout << "2. Best Fit" << endl;
+        cout << "3. Worst Fit" << endl;
+        cout << "4. Next Fit" << endl;
+        cout << "5. View Memory" << endl;
+        cout << "6. Exit" << endl;
+
+        int choice;
+        cout << "Enter your choice: ";
+        cin >> choice;
+
+        switch (choice) {
+            case 1:
+                cout << "First Fit Allocation:" << endl;
+                obj.firstFit();
+                break;
+            case 2:
+                cout << "Best Fit Allocation:" << endl;
+                obj.bestFit();
+                break;
+            case 3:
+                cout << "Worst Fit Allocation:" << endl;
+                obj.worstFit();
+                break;
+            case 4:
+                cout << "Next Fit Allocation:" << endl;
+                obj.nextFit();
+                break;
+            case 5:
+                cout << "Current Memory Status:" << endl;
+                obj.displayMemory();
+                break;
+            case 6:
+                cout << "Exiting..." << endl;
+                return 0;
+            default:
+                cout << "Invalid choice. Please try again." << endl;
+        }
+    }
+
     return 0;
 }
