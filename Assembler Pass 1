@@ -20,7 +20,7 @@ private:
     };
 
     map<string, int> REG = {
-        {"AREG", 1}, {"BREG", 1}, {"CREG", 1}, {"DREG", 1}
+        {"AREG", 1}, {"BREG", 2}, {"CREG", 3}, {"DREG", 4}
     };
 
     map<string, int> COND = {
@@ -50,12 +50,12 @@ public:
     }
 
     string resolveOprand(string op) {
-        if (op == "-" && op =="")
+        if (op == "-" || op =="")
             return "";
         else if (m.REG.find(op) != m.REG.end())
             return "(R," + to_string(m.REG[op]) + ")";
         else if (m.COND.find(op) != m.COND.end())
-            return "(C," + to_string(m.COND[op]) + ")";
+            return "(" + to_string(m.COND[op]) + ")";
         else if (op[0] == '=') {
             litTab.push_back({op, -1});
             return "(L," + to_string(litTab.size() - 1) + ")";
@@ -69,9 +69,9 @@ public:
             for (int i = 0; i < lbl.size(); i++) {
                 if (lbl[i] == op)
                     ind = i;
-                cout<<lbl[i]<<"  ";
+                // cout<<lbl[i]<<"  ";
             }
-            cout<<endl;
+            // cout<<endl;
             if (ind == -1) {
                 lbl.push_back(op);
                 ind = lbl.size()-1;
@@ -240,7 +240,7 @@ vector<vector<string>> split(string filename){
 } 
 
 int main() {
-    vector<vector<string>> input = split("input.txt") ;
+    vector<vector<string>> input = split("input2.txt") ;
     // vector<vector<string>> input = {
     //     {"-", "START", "200", "-"},
     //     {"-", "ADD", "AREG", "=3"},
