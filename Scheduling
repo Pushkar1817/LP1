@@ -1,299 +1,304 @@
-#include<iostream>
-#include <algorithm>
-#include <vector>
-#include <queue>
+#include<bits/stdc++.h>
 using namespace std;
 
-class Processes{
-    public:
-        string name ;
-        int arr_time;
+class process{
+    private:
+        string name;
+        int arv_time;
         int burst_time;
-        int wait_time;
-        int turnAround;
+        int tat;
+        int wt;
         int comp_time;
         int priority;
-
-        Processes(){
+    
+    public:
+        process(){
             name = "";
-            arr_time = 0;
-            burst_time = 0;
-            wait_time = 0;
-            turnAround = 0;
-            comp_time = 0;
+            arv_time = 0 ;
+            burst_time =0;
+            comp_time =0;
+            tat = 0;
+            wt = 0;
             priority = 0;
         }
 
         void create(){
-            cout<<"Enter the Process Name : ";
+            cout<<"Enter the name of process : ";
             cin>>name;
-            cout<<"Arrival Time : ";
-            cin>>arr_time;
-            cout<<"Brust Time : ";
+            cout<<"Enter the arrival time of "<<name<<" : ";
+            cin>>arv_time;
+            cout<<"Enter the burst time of process "<<name<<": ";
             cin>>burst_time;
         }
 
-        friend class Schedular;
+        friend class Scheduler;
 };
 
 class Scheduler{
     private:
-        Processes * process;
+        vector<process>Processes;
         int n;
     public:
         Scheduler(){
-            cout<<"Enter the number of Processes : ";
-            cin>> n;
-            process = new Processes[n];
+            cout<<"Enter the number of processes :";
+            cin>>n;
+            Processes.resize(n);
+        }
 
+        void insertDetails(){
             for(int i = 0 ;i< n ;i++){
-                process[i].create();
-                cout<<endl;
+                Processes[i].create();
             }
         }
-        void display(Processes temp[],int n){
-            cout << "Process\tAT\tBT\tCT\tT_AT\tWT" << endl;
 
+        void display(vector<process>temp,int n,float avg_tat,float wt_tat){
+            cout<<endl<<"name\tat\tbt\tct\tTAT\tWT"<<endl;
             for(int i = 0 ;i< n ;i++){
-                cout << temp[i].name << "\t" << temp[i].arr_time << "\t"
-                     << temp[i].burst_time << "\t"<<temp[i].comp_time<<"\t" << temp[i].turnAround
-                     << "\t" << temp[i].wait_time << endl;               
+                cout<<temp[i].name<<"\t"
+                    <<temp[i].arv_time<<"\t"
+                    <<temp[i].burst_time<<"\t"
+                    <<temp[i].comp_time<<"\t"
+                    <<temp[i].tat<<"\t"
+                    <<temp[i].wt<<"\n";
             }
-        }
-        void average(float avg_tat,float avg_wt){
-            cout<<"\nAverage Turnaround Time : "<<avg_tat;
-            cout<<"\nAverage Waiting Time : "<<avg_wt;
+
+            cout<<"Average Turn Around Time  : "<<avg_tat<<endl;
+            cout<<"Average Waiting Time : "<<wt_tat;
         }
 
         void FCFS(){
-            Processes temp[n];
+            vector<process>temp(Processes);
 
-            for(int i = 0 ; i<  n ;i++)
-                temp[i] = process[i];
-
-            sort(temp, temp + n, []( Processes a,  Processes b) {
-                return a.arr_time < b.arr_time;
+            sort(temp.begin(),temp.end(),[](const process&a,const process&b){
+                return a.arv_time < b.arv_time;
             });
 
-            int ct = 0 ;
-
+            int ct = 0;
             for(int i = 0 ;i< n ;i++){
-                ct += temp[i].burst_time;
+                ct+=temp[i].burst_time;
 
-                temp[i].comp_time = ct ;
-                temp[i].turnAround = temp[i].comp_time - temp[i].arr_time;
-                temp[i].wait_time = temp[i].turnAround - temp[i].burst_time;
+                temp[i].comp_time = ct;
+                temp[i].tat = temp[i].comp_time - temp[i].arv_time;
+                temp[i].wt = temp[i].tat - temp[i].burst_time;
             }
 
             float avg_tat = 0;
             float avg_wt = 0;
 
-            for(int i = 0 ;i< n; i++){
-                avg_tat += temp[i].turnAround;
-                avg_wt += temp[i].wait_time;
+            for(int i = 0 ;i< n ;i++){
+                avg_tat += temp[i].tat;
+                avg_wt += temp[i].wt;
             }
-            avg_tat /=n;
-            avg_wt /=n;
+            avg_tat/=n;
+            avg_wt/=n;
 
-            display(temp,n);
-            average(avg_tat,avg_wt);
+            display(temp,n,avg_tat,avg_wt);
         }
 
-    void SJF_preemptive() {
-        Processes temp[n];
-        int totalTime = 0;
-        for (int i = 0; i < n; i++) {
-            temp[i] = process[i];
-            totalTime += process[i].burst_time;
-        }
-
-        sort(temp, temp + n, [](const Processes &a, const Processes &b) {
-            return a.arr_time < b.arr_time;
-        });
-
-        vector<string> gantt;
-        int aj = 0;
-        int timeStamp = 0;
-        auto cmp = [](const Processes &a, const Processes &b) {
-            return a.burst_time > b.burst_time;
-        };
-        priority_queue<Processes, vector<Processes>, decltype(cmp)> readyQ(cmp);
-
-        while (timeStamp < totalTime) {
-            while (aj < n && temp[aj].arr_time <= timeStamp) {
-                readyQ.push(temp[aj]);
-                aj++;
+        void SJF_preemptive(){
+            vector<process>temp(Processes);
+            int totalTime = 0;
+            for(int i = 0 ;i< temp.size();i++){
+                totalTime+=temp[i].burst_time;
             }
+            // cout<<totalTime<<endl;
+            sort(temp.begin(),temp.end(),[](const process& a, const process&b){
+                return a.arv_time < b.arv_time;
+            });
 
-            if (!readyQ.empty()) {
-                Processes miniBurst = readyQ.top();
-                readyQ.pop();
-                if (gantt.empty() || gantt.back() != miniBurst.name ) {
-                    gantt.push_back(miniBurst.name );
+            vector<string>gantt;
+            auto cmp = [](const process&a,const process&b){
+                return a.burst_time > b.burst_time;
+            };
+            priority_queue<process,vector<process>,decltype(cmp)> readyQ(cmp);
+            int timeStamp =0;
+            int cp = 0;
+
+            while(timeStamp<totalTime){
+                while(cp<n && temp[cp].arv_time <= timeStamp){
+                    readyQ.push(temp[cp]);
+                    cp++;
                 }
-                miniBurst.burst_time--;
+                if(!readyQ.empty()){
+                    process minBurst = readyQ.top();
+                    if(!gantt.size() ||gantt.back() != minBurst.name){
+                        gantt.push_back(minBurst.name);
+                    }
+                    readyQ.pop();
+                    minBurst.burst_time--;
+                    if(minBurst.burst_time == 0){
+                        for(int i = 0 ;i< n ;i++){
+                            if(temp[i].name == minBurst.name){
+                                temp[i].comp_time = timeStamp+1;
+                                temp[i].tat = temp[i].comp_time - temp[i].arv_time;
+                                temp[i].wt = temp[i].tat - temp[i].burst_time;
+                                break;
+                            }
+                        }
+                    }
+                    else{
+                        readyQ.push(minBurst);
+                    }
+                    timeStamp++;
+                }
+            }
 
-                if (miniBurst.burst_time == 0) {
-                    for (int i = 0; i < n; i++) {
-                        if (temp[i].name == miniBurst.name) {
-                            temp[i].comp_time = timeStamp + 1;
-                            temp[i].turnAround = temp[i].comp_time - temp[i].arr_time;
-                            temp[i].wait_time = temp[i].turnAround - temp[i].burst_time;
+            float avg_tat = 0;
+            float avg_wt = 0;
+            for(int i = 0 ;i<  n; i++){
+                avg_tat+=temp[i].tat;
+                avg_wt+=temp[i].wt;
+            }
+            avg_tat/=n;
+            avg_wt/=n;
+            display(temp,n,avg_tat,avg_wt);
+            cout<<"\nGantt chart : \t";
+            for(int i= 0 ;i< gantt.size() ;i++){
+                cout<<gantt[i]<<" ";
+            }
+            cout<<endl;
+        }
+
+        void roundRobin(){
+            int time_quantam;
+            cout<<"Enter the time Quantam : ";
+            cin>>time_quantam;
+            vector<process>temp(Processes);
+            int totalTime = 0;
+            for(int i = 0 ;i< temp.size() ;i++){
+                totalTime+=temp[i].burst_time;
+            }
+
+            sort(temp.begin(),temp.end(),[](const process & a , const process & b){
+                return a.arv_time < b.arv_time;
+            });
+
+            vector<string>gantt;
+            queue<process>readyQ;
+            int timeStamp = 0;
+            int cp = 0;
+
+            while(timeStamp < totalTime){
+                while(cp<n && timeStamp >= temp[cp].arv_time){
+                    readyQ.push(temp[cp]);
+                    cp++; 
+                }
+                if(!readyQ.empty()){
+                    process curr = readyQ.front();
+                    if(!gantt.size() ||gantt.back() != curr.name){
+                        gantt.push_back(curr.name);
+                    }
+                    readyQ.pop();
+                    if(curr.burst_time <= time_quantam){
+                        for(int i = 0 ;i< n ;i++){
+                            if(temp[i].name == curr.name){
+                                temp[i].comp_time = timeStamp + curr.burst_time;
+                                temp[i].tat = temp[i].comp_time - temp[i].arv_time;
+                                temp[i].wt = temp[i].tat - temp[i].burst_time;
+                                break;
+                            }
+                        }
+                        timeStamp+=time_quantam;
+                    }
+                    else{
+                        curr.burst_time = curr.burst_time - time_quantam;
+                        timeStamp += time_quantam;
+                        while(cp<n && timeStamp >= temp[cp].arv_time){
+                            readyQ.push(temp[cp]);
+                            cp++; 
+                        }
+                        readyQ.push(curr);
+                    }
+                }
+            }
+            float avg_tat = 0;
+            float avg_wt = 0;
+            for(int i = 0 ;i<  n; i++){
+                avg_tat+=temp[i].tat;
+                avg_wt+=temp[i].wt;
+            }
+            avg_tat/=n;
+            avg_wt/=n;
+            display(temp,n,avg_tat,avg_wt);
+            cout<<"\nGantt chart : \t";
+            for(int i= 0 ;i< gantt.size() ;i++){
+                cout<<gantt[i]<<" ";
+            }
+            cout<<endl;
+        }
+
+        void priority_non_preemptive(){
+            vector<process>temp(Processes);
+            int totalTime = 0;
+            for(int i = 0 ;i< n ;i++){
+                cout<<"Enter the priority for "<<temp[i].name<<" : ";
+                cin>>temp[i].priority;
+                totalTime+=temp[i].burst_time;
+            }
+
+            sort(temp.begin(),temp.end(),[](const process&a , const process& b){
+                return a.arv_time < b.arv_time;
+            });
+
+            auto cmp = [](const process&a,const process&b){
+                return a.priority < b.priority;
+            };
+            priority_queue<process,vector<process>,decltype(cmp)>readyQ(cmp);
+            int timeStamp = 0 ;
+            vector<string>gantt;
+            int cp =0;
+
+            while(timeStamp <totalTime ){
+                int prevBurst = 1;
+                while(cp <n && timeStamp >= temp[cp].arv_time){
+                    readyQ.push(temp[cp]);
+                    cp++;
+                }
+                if(!readyQ.empty()){
+                    process curr = readyQ.top();
+                    gantt.push_back(curr.name);
+                    readyQ.pop();
+                    for(int i = 0 ;i< n ; i++){
+                        if(curr.name == temp[i].name){
+                            temp[i].comp_time = timeStamp + temp[i].burst_time;
+                            temp[i].tat = temp[i].comp_time - temp[i].arv_time;
+                            temp[i].wt = temp[i].tat - temp[i].burst_time;
                             break;
                         }
                     }
-                } else {
-                    readyQ.push(miniBurst);
+                    prevBurst =curr.burst_time; 
                 }
+                timeStamp+=prevBurst;
             }
-            timeStamp++;
-        }
-
-        float avg_tat = 0, avg_wt = 0;
-        for (int i = 0; i < n; i++) {
-            avg_tat += temp[i].turnAround;
-            avg_wt += temp[i].wait_time;
-        }
-
-        avg_tat /= n;
-        avg_wt /= n;
-        display(temp, n);
-        average(avg_tat, avg_wt);
-        cout<<"\nGantt Chart : ";
-        for(int i = 0 ;i< gantt.size() ;i++){
-            cout<<gantt[i]<<"  ";
-        }
-        cout<<endl;
-    }
-
-    void roundRobin() {
-        Processes temp[n];
-        int totalTime = 0;
-        for (int i = 0; i < n; i++) {
-            temp[i] = process[i];
-            totalTime += process[i].burst_time;
-        }
-        int time_quantum;
-        cout << "Enter Time Quantum: ";
-        cin >> time_quantum;
-
-        sort(temp, temp + n, [](const Processes &a, const Processes &b) {
-            return a.arr_time < b.arr_time;
-        });
-
-        vector<string> gantt;
-        int aj = 0;
-        int timeStamp = 0;
-        int finish = 0;
-        queue<Processes> readyQ;
-
-        while (finish < n) {
-            while (aj < n && temp[aj].arr_time <= timeStamp) {
-                readyQ.push(temp[aj]);
-                aj++;
+            float avg_tat = 0;
+            float avg_wt = 0;
+            for(int i = 0 ;i<  n; i++){
+                avg_tat+=temp[i].tat;
+                avg_wt+=temp[i].wt;
             }
-
-            if (!readyQ.empty()) {
-                Processes currProc = readyQ.front();
-                readyQ.pop();
-                gantt.push_back(currProc.name);
-
-                int timeSpent = min(time_quantum, currProc.burst_time);
-                currProc.burst_time -= timeSpent;
-                timeStamp += time_quantum;
-
-                if (currProc.burst_time <= 0) {
-                    for (int i = 0; i < n; i++) {
-                        if (temp[i].name == currProc.name) {
-                            temp[i].comp_time = timeStamp;
-                            temp[i].turnAround = temp[i].comp_time - temp[i].arr_time;
-                            temp[i].wait_time = temp[i].turnAround - temp[i].burst_time;
-                            finish++;
-                            break;
-                        }
-                    }
-                } else {
-                    while (aj < n && temp[aj].arr_time <= timeStamp) {
-                        readyQ.push(temp[aj]);
-                        aj++;
-                    }
-                    readyQ.push(currProc);
-                }
+            avg_tat/=n;
+            avg_wt/=n;
+            display(temp,n,avg_tat,avg_wt);
+            cout<<"\nGantt chart : \t";
+            for(int i= 0 ;i< gantt.size() ;i++){
+                cout<<gantt[i]<<" ";
             }
+            cout<<endl;
         }
-
-        float avg_tat = 0, avg_wt = 0;
-        for (int i = 0; i < n; i++) {
-            avg_tat += temp[i].turnAround;
-            avg_wt += temp[i].wait_time;
-        }
-
-        avg_tat /= n;
-        avg_wt /= n;
-        display(temp, n);
-        average(avg_tat, avg_wt);
-
-        cout << "\nGantt Chart: ";
-        for (int i = 0; i < gantt.size(); i++) {
-            cout << gantt[i] << "  ";
-        }
-        cout << endl;
-    }
-
-    void priority_non_preemptive(){
-        Processes temp[n];
-
-        for (int i = 0; i < n; i++)
-        {
-            cout<<"Give Priority for "<<process[i].name<<" : ";
-            cin>>process[i].priority;
-            temp[i] = process[i];
-        }
-
-        sort(temp, temp + n, [](const Processes &a, const Processes &b)
-             { return a.priority > b.priority; });
-
-        int ct = 0;
-        Processes gantt[n];
-
-        for (int i = 0; i < n; i++)
-        {
-            gantt[i] = temp[i];
-            ct += gantt[i].burst_time;
-
-            gantt[i].comp_time = ct;
-            gantt[i].turnAround = gantt[i].comp_time - gantt[i].arr_time;
-            gantt[i].wait_time = gantt[i].turnAround - gantt[i].burst_time;
-        }
-
-        float avg_tat = 0, avg_wt = 0;
-        for (int i = 0; i < n; i++)
-        {
-            avg_tat += gantt[i].turnAround;
-            avg_wt += gantt[i].wait_time;
-        }
-        avg_tat = avg_tat / n;
-        avg_wt = avg_wt / n;
-
-        display(gantt, n);
-        average(avg_tat, avg_wt);
-    }
 
 };
-
-
 
 int main ()
 {
     Scheduler scheduler;
     //3 p2 1 5 p3 2 8 p1 0 8
     cout << "......... Scheduling Algorithm ........." << endl;
-    // cout << "1. FCFS" << endl;
-    // scheduler.FCFS();
-    // cout << "2. SJF_Preemptive" << endl;
-    // scheduler.SJF_preemptive();
-    // cout << "3. Round_Robin_Preemptive" << endl;
-    // scheduler.roundRobin();
+    cout << "1. FCFS" << endl;
+    scheduler.FCFS();
+    cout << "2. SJF_Preemptive" << endl;
+    scheduler.SJF_preemptive();
+    cout << "3. Round_Robin_Preemptive" << endl;
+    scheduler.roundRobin();
     cout << "4. Priority_Non_Preemptive" << endl;
     scheduler.priority_non_preemptive();
     return 0;
