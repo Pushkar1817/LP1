@@ -1,53 +1,30 @@
-#include<iostream>
-#include<vector>
-#include<algorithm>
-#include<map>
-#include<fstream>
+#include <bits/stdc++.h>
 using namespace std;
 
 class Mnemonics {
 private:
     map<string, pair<string, int>> IS = {
-        {"STOP", {"IS", 0}},
-        {"ADD", {"IS", 1}},
-        {"SUB", {"IS", 2}},
-        {"MUL", {"IS", 3}},
-        {"MOVER", {"IS", 4}},
-        {"MOVEM", {"IS", 5}},
-        {"COMP", {"IS", 6}},
-        {"BC", {"IS", 7}},
-        {"DIV", {"IS", 8}},
-        {"READ", {"IS", 9}},
-        {"PRINT", {"IS", 10}},
+        {"STOP", {"IS", 0}}, {"ADD", {"IS", 1}}, {"SUB", {"IS", 2}},
+        {"MUL", {"IS", 3}}, {"MOVER", {"IS", 4}}, {"MOVEM", {"IS", 5}},
+        {"COMP", {"IS", 6}}, {"BC", {"IS", 7}}, {"DIV", {"IS", 8}},
+        {"READ", {"IS", 9}}, {"PRINT", {"IS", 10}}
     };
-
+    
     map<string, pair<string, int>> AD = {
-        {"START", {"AD", 0}},
-        {"END", {"AD", 1}},
-        {"ORIGIN", {"AD", 2}},
-        {"EQU", {"AD", 3}},
-        {"LTORG", {"AD", 4}}
+        {"START", {"AD", 1}}, {"END", {"AD", 2}}, {"ORIGIN", {"AD", 3}},
+        {"EQU", {"AD", 4}}, {"LTORG", {"AD", 5}}
     };
 
     map<string, pair<string, int>> DL = {
-        {"DC", {"DL", 0}},
-        {"DS", {"DL", 1}}
+        {"DC", {"DL", 1}}, {"DS", {"DL", 2}}
     };
 
     map<string, int> REG = {
-        {"AREG", 1},
-        {"BREG", 2},
-        {"CREG", 3},
-        {"DREG", 4}
+        {"AREG", 1}, {"BREG", 1}, {"CREG", 1}, {"DREG", 1}
     };
 
     map<string, int> COND = {
-        {"LT", 1},
-        {"LE", 2},
-        {"EQ", 3},
-        {"GT", 4},
-        {"GE", 5},
-        {"ANY", 6}
+        {"GT", 5}, {"GE", 4}, {"EQ", 3}, {"LE", 2}, {"LT", 1}, {"ANY", 6}
     };
 
 public:
@@ -56,187 +33,214 @@ public:
 
 class asmPass1 {
 private:
-    vector<vector<string>> inputCode;
-    vector<string> interCode;
-    vector<string> lbl;
     map<string, int> symTab;
     vector<pair<string, int>> litTab;
+    vector<string> lbl;
+    vector<string> interCode;
+    vector<vector<string>> inputCode;
     vector<int> poolTab;
     int poolInd = 0;
+    Mnemonics m;
     int loc_counter = 0;
+    vector<int> loc;
 
 public:
-    Mnemonics m;
-
-    asmPass1(vector<vector<string>>& inputCode) {
-        this->inputCode = inputCode;
-        poolTab.push_back(0); 
+    asmPass1(vector<vector<string>> intCode) {
+        inputCode = intCode;
     }
 
-    string getOpcode(string op) {
-        if (op == "-")
+    string resolveOprand(string op) {
+        if (op == "-" && op =="")
             return "";
-        if (m.REG.find(op) != m.REG.end())
+        else if (m.REG.find(op) != m.REG.end())
             return "(R," + to_string(m.REG[op]) + ")";
-        if (m.COND.find(op) != m.COND.end())
+        else if (m.COND.find(op) != m.COND.end())
             return "(C," + to_string(m.COND[op]) + ")";
-        if (op[0] == '=') {
+        else if (op[0] == '=') {
             litTab.push_back({op, -1});
             return "(L," + to_string(litTab.size() - 1) + ")";
         } 
-        if(isdigit(op[0])){
-            return"(C,"+op+")";
-        }
-        else {
-            if (find(lbl.begin(), lbl.end(), op) == lbl.end()) {
-                symTab[op] = 0;
-                lbl.push_back(op);
+        else if (isdigit(op[0]))
+            return "(C," + op + ")";
+        else if(op.find('+') == string::npos && op.find('-')==string::npos){
+        // else{
+            // 
+            int ind = -1;
+            for (int i = 0; i < lbl.size(); i++) {
+                if (lbl[i] == op)
+                    ind = i;
+                cout<<lbl[i]<<"  ";
             }
-            int index = distance(lbl.begin(), find(lbl.begin(), lbl.end(), op));
-            return "(S," + to_string(index) + ")";
+            cout<<endl;
+            if (ind == -1) {
+                lbl.push_back(op);
+                ind = lbl.size()-1;
+                symTab[op] = 0;
+            }
+            return "(S," + to_string(ind+1) + ")";
+        }
+        else{
+            int add = op.find('+');
+            if(add!=string::npos){
+                return resolveOprand(op.substr(0,add))+"+"+op.substr(add+1);
+            }
+            int sub = op.find('-');
+            if(sub!=string::npos){
+                return resolveOprand(op.substr(0,sub))+"-"+op.substr(sub+1);
+            }
         }
     }
 
     void processLiterals(int loc_counter) {
-        for (int i = 0; i < litTab.size(); i++) {
-            if (litTab[i].second == -1) {
-                litTab[i].second = loc_counter;
+        for (auto &i : litTab) {
+            if (i.second == -1) {
+                i.second = loc_counter;
                 loc_counter++;
             }
         }
-        poolInd++; 
+        poolInd++;
         poolTab.push_back(poolInd);
     }
 
-    int evalExpress(string op) {
-        if (isdigit(op[0]))
+    int expEval(string op) {
+        
+        char operation = ' ';
+        for(int i = 0 ;i<op.size() ;i++){
+            if(op[i] =='+' || op[i] =='-')
+                operation = op[i];
+        }
+        if(operation==' ' && isdigit(op[0]))
             return stoi(op);
-        if (symTab.find(op) != symTab.end())
-            return symTab[op];
+        if(operation == '+'){
+            int pos = op.find('+');
+            string sym = op.substr(0,pos);
+            int num = stoi(op.substr(pos+1));
+            int addr = symTab[sym];
+            return addr+num;
+        }
+        if(operation == '-'){
+            int pos = op.find('-');
+            string sym = op.substr(0,pos);
+            int num = stoi(op.substr(pos+1));
+            int addr = symTab[sym];
+            return addr-num;
+        }
         return 0;
     }
 
     void pass1() {
-        for (auto& line : inputCode) {
-            // string label = line[0];
-            // string instrc = line[1];
-            // string op1 = line[2];
-            // string op2 = line[3];
-            string label="-" ;
-            string instrc ="-";
-            string op1 ="-";
-            string op2 ="-";
-
-            for(int i =0 ;i< line.size();i++){
-                if(i == 0 && m.IS.find(line[i]) == m.IS.end() && m.AD.find(line[i]) == m.AD.end() && m.DL.find(line[i]) == m.DL.end())
-                    label = line[i];
-                else if(m.IS.find(line[i]) != m.IS.end() || m.AD.find(line[i]) != m.AD.end() || m.DL.find(line[i]) != m.DL.end())
-                    instrc = line[i];
-                else{
-                    if(op1 == "-")
-                        op1 = line[i];
-                    else 
-                        op2 = line[i];
-                }
-            }
-
+        for (auto &line : inputCode) {
+            string label = "-";
+            string instr = "-";
+            string op1 = "-";
+            string op2 = "-";
             string interLine = "";
-
-            if (label != "-" && label != " ") {
+            for (int i = 0; i < line.size(); i++) {
+                if (i == 0 && m.IS.find(line[i]) == m.IS.end() &&
+                    m.AD.find(line[i]) == m.AD.end() &&
+                    m.DL.find(line[i]) == m.DL.end()) {
+                    label = line[i];
+                } 
+                else if (m.IS.find(line[i]) != m.IS.end() ||
+                           m.AD.find(line[i]) != m.AD.end() ||
+                           m.DL.find(line[i]) != m.DL.end()) {
+                    instr = line[i];
+                } 
+                else {
+                    if (op1 == "-") {
+                        op1 = line[i];
+                    } 
+                    else {
+                        op2 = line[i];
+                    }
+                }
+            }
+            // cout<<"'"<<label<<"'"<<loc_counter<<endl;
+            if (label != "-") {
                 symTab[label] = loc_counter;
-                lbl.push_back(label);
+                // cout<<label<<"  "<<symTab[label]<<endl;int i = 0
+                int i = 0;
+                for( ;i< lbl.size();i++){
+                    if(label == lbl[i])
+                        break;
+                }
+                if(i==lbl.size()) lbl.push_back(label);
             }
 
-            if (m.IS.find(instrc) != m.IS.end()) {
-                interLine += "(" + m.IS[instrc].first + "," + to_string(m.IS[instrc].second) + ")";
-                interLine += getOpcode(op1) + getOpcode(op2);
-                loc_counter++;
+            if (m.IS.find(instr) != m.IS.end()) {
+                interLine += "(IS," + to_string(m.IS[instr].second) +")" + ((op1!="-")?resolveOprand(op1):"") +((op2!="-")?resolveOprand(op2):"");
+                interCode.push_back(interLine);
+                loc_counter++;   
             } 
-            else if (m.AD.find(instrc) != m.AD.end()) {
-                interLine += "(" + m.AD[instrc].first + "," + to_string(m.AD[instrc].second) + ")";
-                interLine += getOpcode(op1);
-
-                if (instrc == "LTORG" || instrc == "END") {
-                    processLiterals(loc_counter);
-                } else if (instrc == "START") {
+            else if (m.AD.find(instr) != m.AD.end()) {
+                if(instr == "EQU"){
+                    symTab[label] = expEval(op1);
+                    interCode.push_back("no ic for equ only reflect in sym tab");
+                    continue;
+                }
+                interLine += "(AD," + to_string(m.AD[instr].second) +")" + resolveOprand(op1);
+                interCode.push_back(interLine);
+                if (instr == "START") {
                     loc_counter = stoi(op1) - 1;
-                } else if (instrc == "EQU") {
-                    symTab[label] = evalExpress(op1);
-                } else {
-                    loc_counter = evalExpress(op1) - 1;
-                }
-                loc_counter++;
+                } 
+                else if (instr == "LTORG" || instr == "END")
+                    processLiterals(loc_counter);
+                else if (instr == "ORIGIN")
+                    loc_counter = expEval(op1) - 1;
+                loc_counter++;   
             } 
-            else if (m.DL.find(instrc) != m.DL.end()) {
-                interLine += "(" + m.DL[instrc].first + "," + to_string(m.DL[instrc].second) + ")";
-                interLine+=getOpcode(op1);
-                if (instrc == "DS") {
-                    loc_counter += stoi(op1);
-                } else {
-                    loc_counter++;
+            else if (m.DL.find(instr) != m.DL.end()) {
+                interLine += "(DL," + to_string(m.DL[instr].second) + ")" + resolveOprand(op1);
+                interCode.push_back(interLine);
+                if (m.DL[instr].second == 2) {
+                    // cout<<op1<<endl;
+                    loc_counter += stoi(op1) ;
+                }
+                else{
+                    loc_counter++;   
                 }
             }
-
-            interCode.push_back(interLine);
+            
         }
     }
 
     void showTables() {
-        cout << "\nINTERMEDIATE CODE\n";
-        ofstream inc("intermidiate_code.txt");
-        for (auto& i : interCode) {
-            cout << i << endl;
-            inc<<i<<endl;
+        cout << "---INTERMEDIATE CODE---" << endl;
+        for (const auto &line : interCode) {
+            cout << line << endl;
         }
-        inc.close();
-
-        cout << "\nSYMBOL TABLE\n";
-        cout << "no.\tname\taddress\n";
-        int ind = 0;
-        ofstream sym("symbol_table.txt");
-        for (auto& i : symTab) {
-            cout << ind << "\t" << i.first << "\t" << i.second << endl;
-            sym<<i.first<<"\t"<<i.second<<endl;
-            ind++;
+        cout << "----SYMBOL TABLE----" << endl;
+        int j = 1;
+        cout << "ind.\tname\taddr" << endl;
+        for (const auto &i : symTab) {
+            cout << j++ << "\t" << i.first << "\t" << i.second << endl;
         }
-        sym.close();
-        ofstream lit("literal_table.txt");
-        cout << "\nLITERAL TABLE\n";
-        cout << "no.\tname\taddress\n";
-        ind = 0;
-        for (auto& i : litTab) {
-            cout << ind << "\t" << i.first << "\t" << i.second << endl;
-            lit<<i.first<<"\t"<<i.second<<endl;
-            ind++;
+        cout << "----LITERAL TABLE----" << endl;
+        cout << "ind.\tname\taddr" << endl;
+        for (int i = 0; i < litTab.size(); i++) {
+            cout << (i + 1) << "\t" << litTab[i].first << "\t" << litTab[i].second << endl;
         }
-        lit.close();
-        cout << "\nPOOL TABLE\n";
-        for (auto& i : poolTab)
-            cout << i << endl;
     }
 };
 
-vector<string> splitWord(const string &line) {
-    vector<string> words;
-    string word;
-    for (int i = 0 ;i<line.size() ;i++) {
-        if (line[i] != ' ' && line[i]!=',') {
-            word += line[i];
-        } 
-        else if (!word.empty()) {
-            words.push_back(word);
-            word.clear();
+vector<vector<string>> split(string filename){
+    ifstream inc(filename);
+    vector<vector<string>>tokens;
+    string line;
+    while(getline(inc,line)){
+        string word;
+        stringstream ss(line);
+        vector<string>words;
+        while(getline(ss,word,' ')){
+            if(word.size()>0){words.push_back(word);}
         }
+        tokens.push_back(words);
     }
-
-    if (!word.empty()) {
-        words.push_back(word);
-    }
-
-    return words;
-}
+    return tokens;
+} 
 
 int main() {
+    vector<vector<string>> input = split("input.txt") ;
     // vector<vector<string>> input = {
     //     {"-", "START", "200", "-"},
     //     {"-", "ADD", "AREG", "=3"},
@@ -247,32 +251,16 @@ int main() {
     //     {"-", "SUB", "BREG", "=5"},
     //     {"-", "LTORG", "-", "-"},
     //     {"-", "SUB", "AREG", "A"},
-    //     {"-", "PRINT", "-", "A"},
+    //     {"-", "PRINT", "A", "-"},
     //     {"-", "STOP", "-", "-"},
     //     {"A", "DS", "9", "-"},
     //     {"B", "DC", "20", "-"},
     //     {"C", "DS", "2", "-"},
-    //     {" ", "END", "-", "-"}
+    //     {"-", "END", "-", "-"}
     // };
-    ifstream ic("input.txt");
-    // ic.open("input.txt");
-    string line;
-    vector<string>lines;
 
-    while(ic.is_open()){
-        while(getline(ic,line)){
-            lines.push_back(line);
-        }
-        ic.close();
-    }
-    vector<vector<string>>linesByWord;
-    for(int i = 0 ;i< lines.size() ;i++){
-        linesByWord.push_back(splitWord(lines[i]));
-    }
-
-    asmPass1 p1(linesByWord);
+    asmPass1 p1(input);
     p1.pass1();
     p1.showTables();
-
     return 0;
 }
